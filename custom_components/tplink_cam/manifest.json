@@ -1,6 +1,7 @@
 {
   "domain": "tplink_cam",
-  "name": "TPLink Camera",
+  "version": "1.0.0",
+  "name": "TPLink IP Camera",
   "config_flow": true,
   "documentation": "https://github.com/tete1030/tplink_cam_hass",
   "requirements": [],
