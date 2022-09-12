@@ -30,7 +30,7 @@ async def async_setup_entry(
     device = hass.data[DOMAIN][config_entry.entry_id]
     coordinator = TPLinkCamDataUpdateCoordinator(hass, device)
 
-    async_add_entities([CameraLensSwitch(device, coordinator, config_entry.data[CONF_NAME])])
+    async_add_entities([CameraLensSwitch(device, coordinator, config_entry.data.get(CONF_NAME))])
 
 
 class CameraLensSwitch(CoordinatorEntity[TPLinkCamDataUpdateCoordinator], SwitchEntity):
