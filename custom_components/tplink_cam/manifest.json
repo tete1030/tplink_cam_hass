@@ -1,0 +1,13 @@
+{
+  "domain": "tplink_cam",
+  "name": "TPLink Camera",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/tplink_cam",
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": ["@tete1030"],
+  "iot_class": "local_polling"
+}

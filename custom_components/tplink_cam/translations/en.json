@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "New Camera Lens Switch",
+        "data": {
+          "name": "Name",
+          "api_url": "API Base URL",
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_url": "Invalid URL or the URL should not have any path component",
+      "auth_fail": "Authentication Failure"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  }
+}
