@@ -30,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN] = dict()
     hass.data[DOMAIN][entry.entry_id] = device
 
-    hass.config_entries.async_setup_platforms(entry, (Platform.SWITCH,))
+    hass.config_entries.async_forward_entry_setups(entry, (Platform.SWITCH,))
 
     entry.async_on_unload(entry.add_update_listener(config_entry_update_listener))
 
