@@ -68,16 +68,6 @@ class TPLinkCamConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors=errors,
                 )
 
-            if entry is not None:
-                self.hass.config_entries.async_update_entry(entry, data=user_input)
-                await self.hass.config_entries.async_reload(entry.entry_id)
-                return self.async_abort(reason="reconfigure_successful")
-
-            return self.async_create_entry(
-                title=f"{user_input.get(CONF_NAME, "Test Camera")}",
-                data=user_input,
-            )
-
             try:
                 device = TPLinkIPCam44AW(
                     user_input[CONF_API_URL],
