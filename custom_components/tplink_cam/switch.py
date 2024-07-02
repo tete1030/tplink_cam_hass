@@ -19,7 +19,7 @@ from homeassistant.const import CONF_NAME
 
 from .const import DOMAIN
 from .coordinator import TPLinkCamDataUpdateCoordinator
-from .camera import TPLinkIPCam44AW
+from .lib.camera import TPLinkIPCam44AW
 
 async def async_setup_entry(
     hass: HomeAssistant,

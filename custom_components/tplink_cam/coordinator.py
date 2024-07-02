@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .camera import TPLinkIPCam44AW
+from .lib.camera import TPLinkIPCam44AW
 
 _LOGGER = logging.getLogger(__name__)
 
