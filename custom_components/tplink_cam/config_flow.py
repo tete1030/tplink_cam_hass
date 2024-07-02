@@ -90,7 +90,7 @@ class TPLinkCamConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_USERNAME: user_input[CONF_USERNAME],
                             CONF_PASSWORD: user_input[CONF_PASSWORD],
                         },
-                        reason="already_configured",
+                        error="already_configured",
                     )
                     self._async_abort_entries_match(
                         {CONF_API_URL: user_input[CONF_API_URL]}
