@@ -1,12 +1,13 @@
 import base64
 import requests
 from requests.exceptions import JSONDecodeError, Timeout
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 
 # ref https://github.com/gyje/tplink_encrypt/blob/9d93c2853169038e25f4e99ba6c4c7b833d5957f/tpencrypt.py
 def tp_encrypt(password):
+
     a = 'RDpbLfCPsJZ7fiv'
-    c = 'yLwVl0zKqws7LgKPRQ84Mdt708T1qQ3Ha7xv3H7NyU84p21BriUWBU43odz3iP4rBL3cD02KZciXTysVXiV8ngg6vL48rPJyAUw0HurW20xqxv9aYb4M9wK1Ae0wlro510qXeU07kV57fQMc8L6aLgMLwygtc0F10a0Dg70TOoouyFhdysuRMO51yY5ZlOZZLEal1h0t9YQW0Ko7oBwmCAHoic4HYbUyVeU3sfQ1xtXcPcf1aT303wAQhv66qzW '
+    c = 'yLwVl0zKqws7LgKPRQ84Mdt708T1qQ3Ha7xv3H7NyU84p21BriUWBU43odz3iP4rBL3cD02KZciXTysVXiV8ngg6vL48rPJyAUw0HurW20xqxv9aYb4M9wK1Ae0wlro510qXeU07kV57fQMc8L6aLgMLwygtc0F10a0Dg70TOoouyFhdysuRMO51yY5ZlOZZLEal1h0t9YQW0Ko7oBwmCAHoic4HYbUyVeU3sfQ1xtXcPcf1aT303wAQhv66qzW'
     b = password
     e = ''
     f, g, h, k, l = 187, 187, 187, 187, 187
@@ -33,26 +34,42 @@ def tp_encrypt(password):
 
 
 # # ref https://www.cnblogs.com/masako/p/7660418.html
-# def convert_rsa_key(s):
-#     b_str = base64.b64decode(s)
-#     if len(b_str) < 162:
-#         return False
-#     hex_str = b_str.hex()
-#     m_start = 29 * 2
-#     e_start = 159 * 2
-#     m_len = 128 * 2
-#     e_len = 3 * 2
-#     modulus = hex_str[m_start:m_start + m_len]
-#     exponent = hex_str[e_start:e_start + e_len]
-#     return modulus, exponent
+def convert_rsa_key(s):
+    b_str = base64.b64decode(s)
+    if len(b_str) < 162:
+        return False
+    hex_str = b_str.hex()
+    m_start = 29 * 2
+    e_start = 159 * 2
+    m_len = 128 * 2
+    e_len = 3 * 2
+    modulus = hex_str[m_start:m_start + m_len]
+    exponent = hex_str[e_start:e_start + e_len]
+    return modulus, exponent
 
-# def rsa_encrypt(string, pubkey):
-#     key = convert_rsa_key(pubkey)
-#     modulus = int(key[0], 16)
-#     exponent = int(key[1], 16)
-#     rsa_pubkey = rsa.PublicKey(modulus, exponent)
-#     crypto = rsa.encrypt(string.encode(), rsa_pubkey)
-#     return base64.b64encode(crypto)
+def rsa_encrypt(string, pubkey):
+    # from Crypto.PublicKey import RSA
+    # from Crypto.Cipher import PKCS1_v1_5 as Cipher_PKCS1_v1_5
+    # from base64 import b64decode,b64encode
+
+    # print(pubkey)
+    # keyDER = b64decode(pubkey)
+    # keyPub = RSA.importKey(keyDER)
+    # cipher = Cipher_PKCS1_v1_5.new(keyPub)
+    # cipher_text = cipher.encrypt(string.encode())
+    # emsg = b64encode(cipher_text)
+    # return emsg
+
+    print(pubkey)
+    import rsa
+    key = convert_rsa_key(pubkey)
+    if not key:
+        raise ValueError("Invalid RSA key")
+    modulus = int(key[0], 16)
+    exponent = int(key[1], 16)
+    rsa_pubkey = rsa.PublicKey(modulus, exponent)
+    crypto = rsa.encrypt(string.encode(), rsa_pubkey)
+    return base64.b64encode(crypto)
 
 class TPLinkIPCamError(Exception): pass
 class AuthenticationError(TPLinkIPCamError): pass
@@ -66,18 +83,29 @@ def format_response(response: requests.Response):
 
 class TPLinkIPCam44AW:
     def _get_url(url_base, stok=""):
-        return '{url_base}/stok={stok}/ds'.format(url_base=url_base, stok=stok)
+        url_base = url_base.rstrip('/')
+        if stok == "":
+            return '{url_base}/'.format(url_base=url_base)
+        else:
+            return '{url_base}/stok={stok}/ds'.format(url_base=url_base, stok=stok)
 
-    def _request(url, method, request_data):
+    def _request_api(url, method, request_data, tolerate_401=False):
+        return TPLinkIPCam44AW._request(url, {"method": method, **request_data}, tolerate_401)
+
+    def _request(url, json_data, tolerate_401=False):
         try:
-            response = requests.post(url, json={"method": method, **request_data}, timeout=10)
+            if json_data is None:
+                response = requests.get(url, timeout=10)
+            else:
+                response = requests.post(url, json=json_data, timeout=10)
         except Timeout:
             raise ConnectionError("Connection timed out")
         except requests.exceptions.RequestException as e:
             raise ConnectionError(e)
         
         if response.status_code == 401:
-            raise AuthenticationError(format_response(response))
+            if not tolerate_401:
+                raise AuthenticationError(format_response(response))
         elif response.status_code != 200:
             raise ServerError(format_response(response))
 
@@ -93,14 +121,18 @@ class TPLinkIPCam44AW:
         if error_code == 0:
             return result
         elif error_code == -40401:
+            if tolerate_401:
+                return result
             raise AuthenticationError(format_response(response))
         else:
             raise APIError("Error: " + str(result))
 
-    def __init__(self, url_base, username, password):
+    def __init__(self, url_base, username, password, rsa=False):
+        url_base = url_base.rstrip('/')
         self.url_base = url_base
         self.username = username
         self.password = password
+        self.rsa = rsa
         self.stok = ""
         self.is_logged_in = False
         self.collected_req = dict()
@@ -111,33 +143,47 @@ class TPLinkIPCam44AW:
 
     def login(self):
         self.stok = ""
-        # get key nonce
-        # j = self.request("do", {"login": {}})
-        # key = unquote(j['data']['key'])
-        # nonce = str(j['data']['nonce'])
+        if self.rsa:
+            # get key nonce
+            # j = self.request("do", {"login": {}}, tolerate_401=True)
+            j = TPLinkIPCam44AW._request("{url_base}/pc/Content.htm".format(url_base=self.url_base), None, tolerate_401=True)
+            print(j)
+            key = unquote(j['data']['key'])
+            nonce = str(j['data']['nonce'])
 
-        # encrypt tp
-        tp_password = tp_encrypt(self.password)
-        # tp_password += ":" + nonce
+            # encrypt tp
+            password = self.password
+            # password += ":" + nonce
 
-        # rsa password
-        # rsa_password = rsa_encrypt(tp_password, key)
+            # rsa password
+            rsa_password = rsa_encrypt(password, key)
+            print(rsa_password)
 
-        # login
-        d = {
-            "login": {
-                "username": self.username,
-                # "encrypt_type": "2",
-                # "password": rsa_password.decode()
-                "password": tp_password
+            d = {
+                "login": {
+                    "username": self.username,
+                    "encrypt_type": "2",
+                    "password": quote(rsa_password)
+                }
             }
-        }
+        else:
+            tp_password = tp_encrypt(self.password)
+            d = {
+                "login": {
+                    "username": self.username,
+                    "encrypt_type": "1",
+                    "password": quote(tp_password)
+                }
+            }
+
         j = self.request("do", d)
         self.stok = j["stok"]
+        if self.stok == "":
+            raise AuthenticationError("No stok")
         self.is_logged_in = True
 
-    def request(self, method, request_data):
-        return TPLinkIPCam44AW._request(TPLinkIPCam44AW._get_url(self.url_base, stok=self.stok), method, request_data)
+    def request(self, method, request_data, tolerate_401=False):
+        return TPLinkIPCam44AW._request_api(TPLinkIPCam44AW._get_url(self.url_base, stok=self.stok), method, request_data, tolerate_401)
 
     def user_request(self, method, request_data):
         if self.stok == "":
