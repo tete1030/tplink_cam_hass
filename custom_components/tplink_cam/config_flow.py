@@ -12,7 +12,7 @@ from homeassistant import config_entries, data_entry_flow
 from homeassistant.const import CONF_NAME, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import config_validation as cv, selector
 
-from .camera import AuthenticationError, TPLinkIPCam44AW, TPLinkIPCamError
+from .lib.camera import AuthenticationError, TPLinkIPCam44AW, TPLinkIPCamError
 from .const import CONF_API_URL, DOMAIN
 
 LOGGER = logging.getLogger(__name__)
