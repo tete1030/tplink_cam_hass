@@ -8,8 +8,10 @@ def test_cam():
         "http://192.168.X.X",
         "admin",
         "XXXXXX",
-        True)
+        False)
     cam.login()
+    cam.update_info()
+    print(cam.info)
 
 if __name__ == '__main__':
     test_cam()

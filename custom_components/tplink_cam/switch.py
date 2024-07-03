@@ -59,7 +59,7 @@ class CameraLensSwitch(CoordinatorEntity[TPLinkCamDataUpdateCoordinator], Switch
         return DeviceInfo(
             connections={(dr.CONNECTION_NETWORK_MAC, self.device.info['mac'])},
             identifiers={(DOMAIN, str(self.device.info['barcode']))},
-            manufacturer=self.device.info['manufacturer_name'],
+            manufacturer=self.device.info['manufacturer_name'] if 'manufacturer_name' in self.device.info else 'TP-LINK',
             model=self.device.info['device_model'],
             name=self.config_entry_name or self.device.info['device_alias'],
             sw_version=self.device.info['sw_version'],
